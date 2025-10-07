@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bataille Navale - Écran Public</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Interface publique -->
+        <div id="public-display" class="display-container">
+            <header class="game-header">
+                <div class="event-title">GMM 2025</div>
+                <div class="teams-scores">
+                    <div class="team-score" id="team-a-score">
+                        <span class="team-name">Équipe A</span>
+                        <span class="score">0</span>
+                    </div>
+                    <div class="team-score" id="team-b-score">
+                        <span class="team-name">Équipe B</span>
+                        <span class="score">0</span>
+                    </div>
+                    <div class="team-score" id="team-c-score">
+                        <span class="team-name">Équipe C</span>
+                        <span class="score">0</span>
+                    </div>
+                    <div class="team-score" id="team-d-score">
+                        <span class="team-name">Équipe D</span>
+                        <span class="score">0</span>
+                    </div>
+                </div>
+                <div class="current-turn">
+                    <div class="turn-indicator" id="turn-indicator">À ÉQUIPE A DE TIRER</div>
+                    <div class="timer" id="timer">15:00</div>
+                </div>
+                <button id="toggle-fullscreen" class="btn btn-secondary fullscreen-btn">⛶ Plein écran</button>
+            </header>
+            
+            <main class="game-grids">
+                <div class="grid-container">
+                    <div class="grid-label">Grille A</div>
+                    <div class="battle-grid" id="grid-a"></div>
+                </div>
+                <div class="grid-container">
+                    <div class="grid-label">Grille B</div>
+                    <div class="battle-grid" id="grid-b"></div>
+                </div>
+                <div class="grid-container">
+                    <div class="grid-label">Grille C</div>
+                    <div class="battle-grid" id="grid-c"></div>
+                </div>
+                <div class="grid-container">
+                    <div class="grid-label">Grille D</div>
+                    <div class="battle-grid" id="grid-d"></div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Écran de victoire -->
+        <div id="victory-screen" class="victory-overlay hidden">
+            <div class="victory-content">
+                <div class="victory-anchor">⚓</div>
+                <h1>VICTOIRE !</h1>
+                <h2 id="winner-team">Équipe A</h2>
+                <button id="new-game" class="btn btn-primary">Nouvelle partie</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sounds.js"></script>
+    <script src="game.js"></script>
+    <script>
+        // Test de synchronisation pour l'onglet public
+        setInterval(() => {
+            console.log('Timer display:', game.timeLeft, 's - État:', game.gameState);
+        }, 2000);
+    </script>
+</body>
+</html>

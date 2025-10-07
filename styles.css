@@ -1,0 +1,855 @@
+/* Variables CSS */
+:root {
+    --primary-color: #2563eb;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --water-color: #1991c9;
+    --hit-color: #dc2626;
+    --miss-color: #093d93;
+    --neutral-color: #6b7280;
+    --defeat-color: #374151;
+    
+    --team-a-color: #ef4444;
+    --team-b-color: #3b82f6;
+    --team-c-color: #10b981;
+    --team-d-color: #f59e0b;
+    
+    --font-family: 'Inter', sans-serif;
+    --grid-size: 5;
+}
+
+/* Reset et base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Navigation */
+.app-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 10px 20px;
+    display: flex;
+    gap: 10px;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.nav-btn {
+    padding: 10px 20px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.nav-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Interface publique */
+.display-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.game-header {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(37, 99, 235, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.game-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+.event-title {
+    font-size: 52px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #60a5fa 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+    letter-spacing: -0.02em;
+    position: relative;
+}
+
+.event-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+    border-radius: 2px;
+    opacity: 0.6;
+}
+
+.teams-scores {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.team-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 25px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 140px;
+    position: relative;
+    overflow: hidden;
+}
+
+.team-score::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.team-score:hover::before {
+    opacity: 1;
+}
+
+.team-score.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.2);
+    animation: activeGlow 2s ease-in-out infinite;
+    transform: translateY(-2px);
+}
+
+.team-score.eliminated {
+    background: linear-gradient(135deg, rgba(55, 65, 81, 0.3) 0%, rgba(31, 41, 55, 0.3) 100%);
+    border-color: rgba(107, 114, 128, 0.3);
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+@keyframes activeGlow {
+    0%, 100% { 
+        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.2);
+    }
+    50% { 
+        box-shadow: 0 12px 40px rgba(59, 130, 246, 0.6), 0 0 0 1px rgba(59, 130, 246, 0.4);
+    }
+}
+
+.team-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.score {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+    position: relative;
+}
+
+.current-turn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+    padding: 25px 30px;
+    border-radius: 20px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.current-turn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+    opacity: 0.5;
+}
+
+.turn-indicator {
+    font-size: 38px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #60a5fa 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+    letter-spacing: -0.01em;
+    position: relative;
+    z-index: 1;
+}
+
+/* Timer général */
+.timer {
+    font-size: 32px;
+    font-weight: 700;
+    color: #f59e0b;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);
+    position: relative;
+    z-index: 1;
+}
+
+/* Timer dans la section current-turn (plus spécifique) */
+.current-turn .timer {
+    font-size: 32px;
+    font-weight: 700;
+    color: #f59e0b;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);
+    position: relative;
+    z-index: 1;
+}
+
+.game-grids {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 20px;
+    overflow: hidden;
+    height: 100%;
+}
+
+.grid-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: calc(25% - 7.5px);
+    min-width: 0;
+}
+
+.grid-label {
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+}
+
+.battle-grid {
+    display: grid;
+    grid-template-columns: 20px repeat(5, 1fr);
+    grid-template-rows: 20px repeat(5, 1fr);
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px;
+    border-radius: 8px;
+    width: 100%;
+    aspect-ratio: 1;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.grid-cell {
+    background: var(--water-color);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.grid-cell.hit {
+    background: var(--hit-color);
+    animation: hitEffect 0.5s ease;
+    position: relative;
+    z-index: 10;
+}
+
+.grid-cell.hit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(220, 38, 38, 0.3);
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.grid-cell.hit .ship-image {
+    position: relative;
+    z-index: 15;
+}
+
+/* S'assurer que l'image de fond reste visible pendant l'animation */
+.grid-cell.hit[style*="background-image"] {
+    background-color: var(--hit-color) !important;
+}
+
+/* Animation pour l'image du bateau - appliquée via JavaScript selon l'orientation */
+
+
+.grid-cell.miss {
+    background: var(--miss-color);
+    animation: missEffect 2s ease;
+}
+
+.grid-cell.defeat {
+    background: var(--defeat-color);
+    opacity: 0.6;
+}
+
+.grid-cell.defeat::after {
+    content: "⚓";
+    position: absolute;
+    font-size: 24px;
+    color: white;
+}
+
+/* Coordonnées des grilles */
+.coord-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
+}
+
+/* Les labels de coordonnées utilisent la classe de base .coord-label */
+
+/* Interface administrateur */
+.admin-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #1e293b;
+}
+
+.admin-header {
+    background: #0f172a;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.admin-header h1 {
+    font-size: 32px;
+    color: white;
+}
+
+.admin-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.timer-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.timer-label {
+    font-size: 12px;
+    color: #cbd5e1;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.timer-display .timer {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--warning-color);
+    text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.admin-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 315px 1fr 315px;
+    gap: 20px;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.admin-left, .admin-right {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 8px;
+    overflow-y: auto;
+}
+
+.admin-center {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.admin-grids {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 15px;
+    flex: 1;
+}
+
+.admin-grid-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-grid-container h4 {
+    font-size: 18px;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.admin-grid-container .grid-label-info {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.admin-grid {
+    width: 200px;
+    height: 200px;
+}
+
+.team-selection h3,
+.coordinate-input h3,
+.scores-panel h3,
+.history-panel h3,
+.settings-panel h3 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.current-team-display {
+    background: rgba(37, 99, 235, 0.2);
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#current-team-name {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.team-status {
+    font-size: 14px;
+    color: #cbd5e1;
+}
+
+.team-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.team-btn {
+    padding: 12px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.team-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.team-btn.active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+}
+
+.coord-info {
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #e2e8f0;
+}
+
+.coord-info p {
+    margin: 0;
+    text-align: center;
+}
+
+.coord-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.coord-input select {
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 16px;
+}
+
+.game-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: var(--neutral-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-warning {
+    background: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #d97706;
+}
+
+.score-list, .history-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.score-item, .history-item {
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+/* Écran de victoire */
+.victory-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.victory-content {
+    text-align: center;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    padding: 60px;
+    border-radius: 20px;
+    border: 3px solid var(--primary-color);
+    box-shadow: 0 0 50px rgba(37, 99, 235, 0.5);
+}
+
+.victory-anchor {
+    font-size: 120px;
+    margin-bottom: 30px;
+    animation: bounce 2s infinite;
+}
+
+.victory-content h1 {
+    font-size: 72px;
+    color: var(--success-color);
+    margin-bottom: 20px;
+    text-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+}
+
+.victory-content h2 {
+    font-size: 48px;
+    color: var(--primary-color);
+    margin-bottom: 40px;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes hitEffect {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+@keyframes hitEffectImage {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.83); } /* 1/1.2 pour compenser l'agrandissement de la case */
+    100% { transform: scale(1); }
+}
+
+/* Animation pour les bateaux horizontaux qui garde la rotation */
+@keyframes hitEffectImageHorizontal {
+    0% { transform: rotate(90deg) scale(1); }
+    50% { transform: rotate(90deg) scale(0.83); }
+    100% { transform: rotate(90deg) scale(1); }
+}
+
+
+@keyframes missEffect {
+    0% { transform: scale(1); background: var(--miss-color); }
+    50% { transform: scale(1.1); background: #246ec9; }
+    100% { transform: scale(1); background: var(--water-color); }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-30px); }
+    60% { transform: translateY(-15px); }
+}
+
+/* Responsive */
+@media (max-width: 1366px) {
+    .admin-content {
+        grid-template-columns: 250px 1fr 250px;
+    }
+    
+    .admin-grid {
+        width: 180px;
+        height: 180px;
+    }
+    
+    .game-grids {
+        flex-direction: column;
+        gap: 30px;
+        padding: 8px;
+    }
+    
+    .grid-container {
+        max-width: 100%;
+        flex: none;
+    }
+}
+
+@media (max-width: 1920px) {
+    .game-grids {
+        gap: 30px;
+        padding: 8px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .game-grids {
+        gap: 30px;
+        padding: 12px;
+    }
+}
+
+/* Bouton plein écran */
+.fullscreen-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.fullscreen-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.fullscreen-btn:active {
+    transform: scale(0.95);
+}
+
+/* Mode plein écran pour l'écran public */
+.fullscreen-mode .app-nav {
+    display: none;
+}
+
+.fullscreen-mode .display-container {
+    padding-top: 0;
+    height: 100vh;
+}
+
+.fullscreen-mode .admin-container {
+    padding-top: 0;
+}
+
+.fullscreen-mode .fullscreen-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    padding: 8px 12px;
+}
+
+.fullscreen-mode .fullscreen-btn:hover {
+    background: rgba(0, 0, 0, 0.95);
+    border-color: rgba(255, 255, 255, 0.8);
+}

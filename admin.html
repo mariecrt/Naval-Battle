@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bataille Navale - Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Interface administrateur -->
+        <div id="admin-panel" class="admin-container">
+            <div class="admin-header">
+                <h1>Interface Administrateur</h1>
+                <div class="admin-controls">
+                    <div class="timer-display">
+                        <span class="timer-label">Temps restant:</span>
+                        <span id="timer" class="timer">15:00</span>
+                    </div>
+                    <button id="toggle-fullscreen" class="btn btn-secondary">⛶ Plein écran</button>
+                    <button id="start-game" class="btn btn-primary">Démarrer</button>
+                    <button id="pause-game" class="btn btn-secondary">Pause</button>
+                    <button id="end-game" class="btn btn-danger">Terminer</button>
+                    <button id="reset-game" class="btn btn-warning">Reset</button>
+                </div>
+            </div>
+
+            <div class="admin-content">
+                <div class="admin-left">
+                    <div class="team-selection">
+                        <h3>Équipe qui tire</h3>
+                        <div class="current-team-display">
+                            <span id="current-team-name">Équipe A</span>
+                            <span class="team-status">va tirer sur les 3 grilles adverses</span>
+                        </div>
+                        <div class="team-buttons">
+                            <button class="team-btn" data-team="a">Équipe A</button>
+                            <button class="team-btn" data-team="b">Équipe B</button>
+                            <button class="team-btn" data-team="c">Équipe C</button>
+                            <button class="team-btn" data-team="d">Équipe D</button>
+                        </div>
+                    </div>
+
+                    <div class="coordinate-input">
+                        <h3>Coordonnée de tir</h3>
+                        <div class="coord-info">
+                            <p>L'équipe sélectionnée va tirer sur les <strong>3 grilles adverses</strong></p>
+                        </div>
+                        <div class="coord-input">
+                            <select id="coord-x">
+                                <option value="">Colonne</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                            </select>
+                            <select id="coord-y">
+                                <option value="">Ligne</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                            <button id="fire-shot" class="btn btn-primary">Tirer</button>
+                        </div>
+                    </div>
+
+                    <div class="game-actions">
+                        <button id="undo-last" class="btn btn-secondary">Annuler dernier tir</button>
+                        <button id="randomize-boats" class="btn btn-secondary">Randomiser bateaux</button>
+                        <button id="toggle-boats" class="btn btn-secondary">Afficher/Masquer bateaux</button>
+                    </div>
+                </div>
+
+                <div class="admin-center">
+                    <div class="admin-grids">
+                        <div class="admin-grid-container">
+                            <h4>Grille A</h4>
+                            <div class="grid-label-info" id="grid-a-info">Équipe A</div>
+                            <div class="battle-grid admin-grid" id="admin-grid-a"></div>
+                        </div>
+                        <div class="admin-grid-container">
+                            <h4>Grille B</h4>
+                            <div class="grid-label-info" id="grid-b-info">Équipe B</div>
+                            <div class="battle-grid admin-grid" id="admin-grid-b"></div>
+                        </div>
+                        <div class="admin-grid-container">
+                            <h4>Grille C</h4>
+                            <div class="grid-label-info" id="grid-c-info">Équipe C</div>
+                            <div class="battle-grid admin-grid" id="admin-grid-c"></div>
+                        </div>
+                        <div class="admin-grid-container">
+                            <h4>Grille D</h4>
+                            <div class="grid-label-info" id="grid-d-info">Équipe D</div>
+                            <div class="battle-grid admin-grid" id="admin-grid-d"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-right">
+                    <div class="scores-panel">
+                        <h3>Scores</h3>
+                        <div class="score-list" id="score-list"></div>
+                    </div>
+
+                    <div class="history-panel">
+                        <h3>Historique</h3>
+                        <div class="history-list" id="history-list"></div>
+                    </div>
+
+                    <div class="settings-panel">
+                        <h3>Paramètres</h3>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="show-timer" checked> Afficher timer sur l'écran public
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="mute-sounds"> Couper le son
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="allow-contact" checked> Autoriser bateaux adjacents
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Écran de victoire -->
+        <div id="victory-screen" class="victory-overlay hidden">
+            <div class="victory-content">
+                <div class="victory-anchor">⚓</div>
+                <h1>VICTOIRE !</h1>
+                <h2 id="winner-team">Équipe A</h2>
+                <button id="new-game" class="btn btn-primary">Nouvelle partie</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sounds.js"></script>
+    <script src="game.js"></script>
+    <script>
+        // Test simple pour vérifier que le bouton fonctionne
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Test: Bouton start-game trouvé ?', document.getElementById('start-game'));
+            console.log('Test: Instance game créée ?', typeof game !== 'undefined');
+        });
+    </script>
+</body>
+</html>
