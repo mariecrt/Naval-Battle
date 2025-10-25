@@ -145,10 +145,10 @@ class Grid {
 class Game {
     constructor() {
         this.teams = [
-            new Team('a', 'Équipe A'),
-            new Team('b', 'Équipe B'),
-            new Team('c', 'Équipe C'),
-            new Team('d', 'Équipe D')
+            new Team('a', 'Team A'),
+            new Team('b', 'Team B'),
+            new Team('c', 'Team C'),
+            new Team('d', 'Team D')
         ];
         this.grids = {
             'a': new Grid('a'),
@@ -158,89 +158,42 @@ class Game {
         };
         this.currentTeam = 'a';
         this.gameState = 'preparation'; // 'preparation', 'playing', 'finished'
-        this.timeLeft = 15 * 60; // 15 minutes en secondes
         this.shotHistory = [];
         this.settings = {
-            showTimer: true,
             muteSounds: false,
             allowContact: true,
             showBoats: false,
-            isPaused: false,
             gameEnding: false
         };
-        this.timerInterval = null;
+        
+        // Variables pour le placement par drag & drop
+        this.placementMode = false;
+        this.draggedShip = null;
+        this.dragStartPos = null;
     }
 
     startGame() {
-        console.log('Démarrage du jeu...');
+        console.log('Starting game...');
         this.gameState = 'playing';
-        this.settings.isPaused = false; // S'assurer que le jeu n'est pas en pause
         this.settings.gameEnding = false; // S'assurer que la partie ne se termine pas
         
-        // Démarrer le timer sur tous les onglets
-        this.startTimer();
-        console.log('Timer démarré sur tous les onglets');
+        console.log('Game started');
         
         this.updateDisplay();
         this.saveState();
-        console.log('Jeu démarré !');
+        console.log('Game started!');
     }
 
-    startTimer() {
-        // Arrêter le timer existant s'il y en a un
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-        }
-        
-        console.log('Timer démarré avec', this.timeLeft, 'secondes');
-        
-        this.timerInterval = setInterval(() => {
-            if (this.gameState === 'playing' && this.timeLeft > 0) {
-                this.timeLeft--;
-                this.updateTimer();
-                
-                // Sauvegarder toutes les 10 secondes
-                if (this.timeLeft % 10 === 0) {
-                    this.saveState();
-                }
-                
-                if (this.timeLeft <= 0) {
-                    this.endGame();
-                }
-            }
-        }, 1000); // Exactement 1 seconde
-    }
 
-    pauseGame() {
-        // Pause le timer sur tous les onglets
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-            this.timerInterval = null;
-        }
-        this.settings.isPaused = true;
-        this.saveState();
-        console.log('Timer mis en pause');
-    }
-
-    resumeGame() {
-        // Reprendre le timer si le jeu est en cours
-        if (this.gameState === 'playing' && this.settings.isPaused) {
-            this.settings.isPaused = false;
-            this.startTimer();
-            this.saveState();
-            console.log('Timer repris');
-        }
-    }
 
     endGame() {
         this.gameState = 'finished';
-        this.pauseGame();
         
         // Déterminer la raison de la fin de partie
         const eliminatedTeams = this.teams.filter(team => team.status === 'eliminated');
-        const reason = eliminatedTeams.length >= 3 ? 'elimination' : 'timeout';
+        const reason = eliminatedTeams.length >= 3 ? 'elimination' : 'manual';
         
-        console.log(`Fin de partie - Raison: ${reason} (${eliminatedTeams.length} équipes éliminées)`);
+        console.log(`Game ended - Reason: ${reason} (${eliminatedTeams.length} teams eliminated)`);
         
         this.showVictoryScreen();
         this.saveState();
@@ -255,41 +208,41 @@ class Game {
     async shoot(coord) {
         if (this.gameState !== 'playing') return;
 
-        console.log(`Tir sur ${coord} par l'équipe ${this.currentTeam}`);
+        console.log(`Shot at ${coord} by team ${this.currentTeam}`);
         const results = [];
         let totalPoints = 0;
         let hasAnyHit = false;
         let hasAnySunkShip = false;
 
-        // Tirer sur les 3 grilles adverses
+        // Shoot at the 3 opponent grids
         Object.keys(this.grids).forEach(gridId => {
             if (gridId !== this.currentTeam) {
                 const result = this.grids[gridId].shoot(coord);
-                console.log(`Résultat sur grille ${gridId}:`, result);
+                console.log(`Result on grid ${gridId}:`, result);
                 results.push({ gridId, ...result });
                 totalPoints += result.points;
                 
-                // Vérifier s'il y a eu un hit
+                // Check if there was a hit
                 if (result.result === 'hit') {
                     hasAnyHit = true;
                 }
                 
-                // Vérifier si un bateau a été coulé
+                // Check if a boat was sunk
                 if (result.sunkShip) {
                     hasAnySunkShip = true;
                 }
             }
         });
 
-        // Mettre à jour le score
+        // Update score
         const currentTeamObj = this.teams.find(team => team.id === this.currentTeam);
         currentTeamObj.score += totalPoints;
-        console.log(`Score mis à jour: ${currentTeamObj.name} = ${currentTeamObj.score} (+${totalPoints})`);
+        console.log(`Score updated: ${currentTeamObj.name} = ${currentTeamObj.score} (+${totalPoints})`);
 
-        // Vérifier les éliminations
+        // Check eliminations
         this.checkEliminations();
 
-        // Ajouter à l'historique
+        // Add to history
         this.shotHistory.push({
             teamId: this.currentTeam,
             coord,
@@ -323,17 +276,17 @@ class Game {
                     team.status = 'eliminated';
                     hasEliminatedTeam = true;
                     eliminatedCount++;
-                    console.log(`Équipe ${team.name} éliminée ! (${eliminatedCount}/4)`);
+                    console.log(`Team ${team.name} eliminated! (${eliminatedCount}/4)`);
                 }
             }
         });
         
         // Vérifier si la partie doit se terminer
         if (hasEliminatedTeam && this.gameState === 'playing') {
-            // Si 3 équipes sont éliminées (il ne reste qu'une équipe), terminer la partie
+            // Si 3 teams sont éliminées (il ne reste qu'une team), terminer la partie
             if (eliminatedCount >= 3) {
                 this.settings.gameEnding = true; // Marquer que la partie se termine
-                console.log('Toutes les équipes sauf une sont éliminées - Partie se terminera après le son et l\'animation...');
+                console.log('All teams except one are eliminated - Game will end after sound and animation...');
             }
         }
     }
@@ -379,13 +332,13 @@ class Game {
     }
 
     randomizeBoats() {
-        console.log('🔄 Randomisation des bateaux...');
+        console.log('🔄 Randomizing boats...');
         Object.keys(this.grids).forEach(gridId => {
-            console.log(`Création nouvelle grille pour ${gridId}`);
+            console.log(`Creating new grid for ${gridId}`);
             this.grids[gridId] = new Grid(gridId);
             this.placeRandomShips(gridId);
         });
-        console.log('✅ Randomisation terminée');
+        console.log('✅ Randomization completed');
         this.updateDisplay();
         this.saveState();
     }
@@ -418,10 +371,10 @@ class Game {
             }
         } while (!grid.placeShip(corvette));
         
-        console.log(`✅ Bateaux placés pour ${teamId}:`);
-        console.log(`  - Porte-avion (${carrier.orientation}):`, carrier.positions);
+        console.log(`✅ Boats placed for ${teamId}:`);
+        console.log(`  - Carrier (${carrier.orientation}):`, carrier.positions);
         console.log(`  - Corvette (${corvette.orientation}):`, corvette.positions);
-        console.log(`Total bateaux dans la grille:`, grid.ships.length);
+        console.log(`Total boats in grid:`, grid.ships.length);
     }
 
     generateRandomShip(type, size) {
@@ -534,7 +487,7 @@ class Game {
                         ship.isSunk = shipData.isSunk || false;
                         this.grids[gridId].ships.push(ship);
                     });
-                    console.log(`Grille ${gridId} restaurée - Bateaux:`, this.grids[gridId].ships.length);
+                    console.log(`Grid ${gridId} restored - Boats:`, this.grids[gridId].ships.length);
                 } else {
                     console.warn(`Aucun bateau trouvé pour la grille ${gridId}`);
                 }
@@ -544,30 +497,16 @@ class Game {
                 }
             });
             
-            // Redémarrer le timer si le jeu est en cours et pas en pause
-            if (this.gameState === 'playing' && !this.timerInterval && !this.settings.isPaused) {
-                this.startTimer();
-                console.log('Timer redémarré après chargement de l\'état');
-            }
+            // Le jeu est chargé
+            console.log('Game state loaded');
         }
     }
 
     updateDisplay() {
         this.updatePublicDisplay();
         this.updateAdminDisplay();
-        this.updatePauseButton();
     }
 
-    updatePauseButton() {
-        const pauseGameBtn = document.getElementById('pause-game');
-        if (pauseGameBtn) {
-            if (this.settings.isPaused) {
-                pauseGameBtn.textContent = 'Reprendre';
-            } else {
-                pauseGameBtn.textContent = 'Pause';
-            }
-        }
-    }
 
     updatePublicDisplay() {
         // Mettre à jour les scores
@@ -579,7 +518,7 @@ class Game {
                     scoreSpan.textContent = team.score;
                     console.log(`Score mis à jour pour ${team.name}: ${team.score}`);
                 } else {
-                    console.warn(`Élément .score non trouvé pour l'équipe ${team.id}`);
+                    console.warn(`Élément .score non trouvé pour l'team ${team.id}`);
                 }
                 scoreElement.classList.toggle('eliminated', team.status === 'eliminated');
                 scoreElement.classList.toggle('active', team.id === this.currentTeam && this.gameState === 'playing');
@@ -593,52 +532,48 @@ class Game {
         if (turnIndicator) {
             if (this.gameState === 'playing') {
                 const currentTeam = this.teams.find(t => t.id === this.currentTeam);
-                turnIndicator.textContent = `À ${currentTeam.name.toUpperCase()} DE TIRER`;
+                turnIndicator.textContent = `${currentTeam.name.toUpperCase()}'S TURN TO SHOOT`;
             } else if (this.gameState === 'preparation') {
-                turnIndicator.textContent = 'PRÉPARATION EN COURS';
+                turnIndicator.textContent = 'PREPARATION IN PROGRESS';
             } else if (this.gameState === 'finished') {
-                // Déterminer la raison de la fin de partie
+                // Determine the reason for game end
                 const eliminatedTeams = this.teams.filter(team => team.status === 'eliminated');
-                const reason = eliminatedTeams.length >= 3 ? 'elimination' : 'timeout';
+                const reason = eliminatedTeams.length >= 3 ? 'elimination' : 'manual';
                 
                 if (reason === 'elimination') {
-                    // Victoire par élimination
+                    // Victory by elimination
                     const remainingTeam = this.teams.find(team => team.status !== 'eliminated');
                     if (remainingTeam) {
-                        turnIndicator.textContent = `VICTOIRE DE ${remainingTeam.name.toUpperCase()} !`;
+                        turnIndicator.textContent = `${remainingTeam.name.toUpperCase()} WINS!`;
                     } else {
                         // Fallback
                         const sortedTeams = this.teams.sort((a, b) => b.score - a.score);
                         const highestScore = sortedTeams[0].score;
                         const winners = sortedTeams.filter(team => team.score === highestScore);
                         if (winners.length === 1) {
-                            turnIndicator.textContent = `VICTOIRE DE ${winners[0].name.toUpperCase()}`;
+                            turnIndicator.textContent = `${winners[0].name.toUpperCase()} WINS!`;
                         } else {
                             const winnerNames = winners.map(team => team.name).join(' ET ');
-                            turnIndicator.textContent = `ÉGALITÉ ENTRE ${winnerNames.toUpperCase()}`;
+                            turnIndicator.textContent = `TIE BETWEEN ${winnerNames.toUpperCase()}`;
                         }
                     }
                 } else {
-                    // Victoire par score (timer écoulé)
+                    // Victory by score (manual end)
                     const sortedTeams = this.teams.sort((a, b) => b.score - a.score);
                     const highestScore = sortedTeams[0].score;
                     const winners = sortedTeams.filter(team => team.score === highestScore);
                     
                     if (winners.length === 1) {
-                        turnIndicator.textContent = `VICTOIRE DE ${winners[0].name.toUpperCase()}`;
+                        turnIndicator.textContent = `${winners[0].name.toUpperCase()} WINS!`;
                     } else {
                         const winnerNames = winners.map(team => team.name).join(' ET ');
-                        turnIndicator.textContent = `ÉGALITÉ ENTRE ${winnerNames.toUpperCase()}`;
+                        turnIndicator.textContent = `TIE BETWEEN ${winnerNames.toUpperCase()}`;
                     }
                 }
             }
         }
 
-        // Mettre à jour le timer
-        this.updateTimer();
-        
-        // Mettre à jour l'affichage du timer public selon les paramètres
-        this.updatePublicTimer();
+        // Mettre à jour l'affichage
 
         // Mettre à jour les grilles
         Object.keys(this.grids).forEach(gridId => {
@@ -647,28 +582,28 @@ class Game {
     }
 
     updateAdminDisplay() {
-        // Mettre à jour les boutons d'équipe
+        // Mettre à jour les boutons d'team
         document.querySelectorAll('.team-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.team === this.currentTeam);
         });
 
-        // Mettre à jour l'affichage de l'équipe courante
+        // Mettre à jour l'affichage de l'team courante
         const currentTeamName = document.getElementById('current-team-name');
         if (currentTeamName) {
             const currentTeam = this.teams.find(t => t.id === this.currentTeam);
             currentTeamName.textContent = currentTeam.name;
         }
 
-        // Mettre à jour les infos des grilles (adverses vs équipe qui tire)
+        // Mettre à jour les infos des grilles (adverses vs team qui tire)
         Object.keys(this.grids).forEach(gridId => {
             const gridInfo = document.getElementById(`grid-${gridId}-info`);
             if (gridInfo) {
                 const team = this.teams.find(t => t.id === gridId);
                 if (gridId === this.currentTeam) {
-                    gridInfo.textContent = `${team.name} (qui tire)`;
+                    gridInfo.textContent = `${team.name} (shooting)`;
                     gridInfo.style.color = '#10b981';
                 } else {
-                    gridInfo.textContent = `${team.name} (adverse)`;
+                    gridInfo.textContent = `${team.name} (opponent)`;
                     gridInfo.style.color = '#ef4444';
                 }
             }
@@ -762,6 +697,21 @@ class Game {
                 const cellElement = document.createElement('div');
                 cellElement.className = 'grid-cell';
                 cellElement.dataset.coord = coord;
+                
+                // Gestion des clics en mode placement
+                if (gridId.startsWith('admin-') && game.placementMode) {
+                    const teamId = gridId.replace('admin-grid-', '');
+                    
+                    // Clic simple pour sélectionner un bateau
+                    cellElement.addEventListener('click', (e) => {
+                        if (cell.containsShip) {
+                            const ship = grid.ships.find(s => s.positions.includes(coord));
+                            if (ship) {
+                                game.selectShipForAction(ship, teamId, coord);
+                            }
+                        }
+                    });
+                }
 
                 // Appliquer les états
                 if (cell.state === 'hit') {
@@ -774,36 +724,46 @@ class Game {
                         // État "en attente" - case normale (pas de changement visuel)
                         // La case reste comme elle était
                     } else {
-                        // État "touché" - afficher l'image du bateau
+                        // État "touché" - afficher l'image du bateau seulement s'il est coulé
                         cellElement.classList.add('hit');
-                        const shipImage = this.getShipImageForCell(coord, grid);
-                        if (shipImage) {
-                            // Créer un élément pour l'image du bateau
-                            const shipImageElement = document.createElement('div');
-                            shipImageElement.className = 'ship-image';
-                            shipImageElement.style.backgroundImage = `url('${shipImage}')`;
-                            shipImageElement.style.backgroundSize = 'contain';
-                            shipImageElement.style.backgroundRepeat = 'no-repeat';
-                            shipImageElement.style.backgroundPosition = 'center';
-                            shipImageElement.style.width = '100%';
-                            shipImageElement.style.height = '100%';
-                            shipImageElement.style.position = 'absolute';
-                            shipImageElement.style.top = '0';
-                            shipImageElement.style.left = '0';
-                            shipImageElement.style.zIndex = '2';
-                            
-                            // Rotation et animation pour les bateaux horizontaux
-                            const ship = grid.ships.find(s => s.positions.includes(coord));
-                            if (ship && ship.orientation === 'H') {
-                                shipImageElement.style.transform = 'rotate(90deg)';
-                                shipImageElement.style.animation = 'hitEffectImageHorizontal 0.5s ease';
+                        
+                        // Vérifier si le bateau est complètement coulé
+                        const ship = grid.ships.find(s => s.positions.includes(coord));
+                        const isShipSunk = ship && ship.isSunk;
+                        
+                        if (isShipSunk) {
+                            // Afficher l'image du bateau seulement s'il est coulé
+                            const shipImage = this.getShipImageForCell(coord, grid);
+                            if (shipImage) {
+                                // Créer un élément pour l'image du bateau
+                                const shipImageElement = document.createElement('div');
+                                shipImageElement.className = 'ship-image';
+                                shipImageElement.style.backgroundImage = `url('${shipImage}')`;
+                                shipImageElement.style.backgroundSize = 'contain';
+                                shipImageElement.style.backgroundRepeat = 'no-repeat';
+                                shipImageElement.style.backgroundPosition = 'center';
+                                shipImageElement.style.width = '100%';
+                                shipImageElement.style.height = '100%';
+                                shipImageElement.style.position = 'absolute';
+                                shipImageElement.style.top = '0';
+                                shipImageElement.style.left = '0';
+                                shipImageElement.style.zIndex = '2';
+                                
+                                // Rotation et animation pour les bateaux horizontaux
+                                if (ship && ship.orientation === 'H') {
+                                    shipImageElement.style.transform = 'rotate(90deg)';
+                                    shipImageElement.style.animation = 'hitEffectImageHorizontal 0.5s ease';
+                                } else {
+                                    shipImageElement.style.animation = 'hitEffectImage 0.5s ease';
+                                }
+                                
+                                cellElement.appendChild(shipImageElement);
                             } else {
-                                shipImageElement.style.animation = 'hitEffectImage 0.5s ease';
+                                cellElement.textContent = '';
                             }
-                            
-                            cellElement.appendChild(shipImageElement);
                         } else {
-                            cellElement.textContent = '💥';
+                            // Bateau touché mais pas coulé - afficher seulement une case rouge
+                            cellElement.textContent = '';
                         }
                     }
                 } else if (cell.state === 'water') {
@@ -861,7 +821,7 @@ class Game {
                 scoreItem.className = 'score-item';
                 scoreItem.innerHTML = `
                     <strong>${team.name}</strong>: ${team.score} pts
-                    ${team.status === 'eliminated' ? ' (Éliminée)' : ''}
+                    ${team.status === 'eliminated' ? ' (Eliminated)' : ''}
                 `;
                 scoreList.appendChild(scoreItem);
             });
@@ -884,48 +844,25 @@ class Game {
             });
     }
 
-    updateTimer() {
-        const timerElement = document.getElementById('timer');
-        
-        if (timerElement) {
-            const minutes = Math.floor(this.timeLeft / 60);
-            const seconds = this.timeLeft % 60;
-            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            timerElement.textContent = timeString;
-        } else {
-            console.log('Élément timer non trouvé !');
-        }
-    }
 
-    updatePublicTimer() {
-        // Afficher ou masquer le timer sur l'écran public selon les paramètres
-        const publicTimer = document.querySelector('.timer');
-        if (publicTimer) {
-            if (this.settings.showTimer) {
-                publicTimer.style.display = 'block';
-            } else {
-                publicTimer.style.display = 'none';
-            }
-        }
-    }
 
     showVictoryScreen() {
-        // Trier les équipes par score (décroissant)
+        // Trier les teams par score (décroissant)
         const sortedTeams = this.teams.sort((a, b) => b.score - a.score);
         const highestScore = sortedTeams[0].score;
         
-        // Trouver toutes les équipes avec le score le plus élevé
+        // Trouver toutes les teams avec le score le plus élevé
         const winners = sortedTeams.filter(team => team.score === highestScore);
         
         // Déterminer la raison de la fin de partie
         const eliminatedTeams = this.teams.filter(team => team.status === 'eliminated');
-        const reason = eliminatedTeams.length >= 3 ? 'elimination' : 'timeout';
+        const reason = eliminatedTeams.length >= 3 ? 'elimination' : 'manual';
         
         let winnerText;
         let titleText;
         
         if (reason === 'elimination') {
-            // Victoire par élimination - l'équipe restante gagne
+            // Victoire par élimination - l'team restante gagne
             const remainingTeam = this.teams.find(team => team.status !== 'eliminated');
             if (remainingTeam) {
                 titleText = 'VICTOIRE PAR ÉLIMINATION !';
@@ -975,20 +912,364 @@ class Game {
         });
         this.currentTeam = 'a';
         this.gameState = 'preparation';
-        this.timeLeft = 15 * 60;
         this.shotHistory = [];
-        this.settings.isPaused = false; // Réinitialiser l'état de pause
         this.settings.gameEnding = false; // Réinitialiser l'état de fin de partie
-        this.pauseGame();
         
         // Réinitialiser les grilles
         Object.keys(this.grids).forEach(gridId => {
             this.grids[gridId] = new Grid(gridId);
         });
         
+        // Sortir du mode placement
+        this.exitPlacementMode();
+        
         this.hideVictoryScreen();
         this.updateDisplay();
         this.saveState();
+    }
+
+    // Système de placement par drag & drop
+    startPlacementMode() {
+        this.placementMode = true;
+        
+        // Afficher le panneau de placement
+        const panel = document.getElementById('manual-placement-panel');
+        if (panel) {
+            panel.classList.remove('hidden');
+        }
+        
+        // Activer le mode placement sur les grilles
+        document.body.classList.add('placement-mode');
+        
+        // D'abord randomiser les bateaux pour avoir une base
+        this.randomizeBoats();
+        
+        this.updatePlacementInterface();
+        console.log('Placement mode activated - Boats randomized');
+    }
+
+    exitPlacementMode() {
+        this.placementMode = false;
+        this.draggedShip = null;
+        this.dragStartPos = null;
+        
+        // Masquer le panneau de placement
+        const panel = document.getElementById('manual-placement-panel');
+        if (panel) {
+            panel.classList.add('hidden');
+        }
+        
+        // Désactiver le mode placement sur les grilles
+        document.body.classList.remove('placement-mode');
+        
+        console.log('Placement mode deactivated');
+    }
+
+    updatePlacementInterface() {
+        this.updatePlacementInstructions();
+        this.updateDisplay();
+    }
+
+    // Système de placement simplifié
+    moveShip(ship, teamId, newStartPos) {
+        if (!this.placementMode) return false;
+        
+        const grid = this.grids[teamId];
+        const newOrientation = ship.orientation;
+        
+        // Calculer les nouvelles positions
+        const startX = newStartPos.charCodeAt(0) - 65;
+        const startY = parseInt(newStartPos.slice(1)) - 1;
+        
+        const newPositions = [];
+        for (let i = 0; i < ship.size; i++) {
+            const x = String.fromCharCode(65 + startX + (newOrientation === 'H' ? i : 0));
+            const y = startY + (newOrientation === 'V' ? i : 0) + 1;
+            newPositions.push(x + y);
+        }
+        
+        // Vérifier si les nouvelles positions sont valides
+        const tempShip = new Ship(ship.type, ship.size, newOrientation, newPositions);
+        if (this.isValidShipPlacement(tempShip, grid)) {
+            // Retirer l'ancien bateau
+            ship.positions.forEach(pos => {
+                grid.cells[pos].containsShip = false;
+            });
+            
+            // Ajouter le nouveau bateau
+            ship.positions = newPositions;
+            tempShip.positions.forEach(pos => {
+                grid.cells[pos].containsShip = true;
+            });
+            
+            console.log(`Boat ${ship.type} moved to ${newStartPos}`);
+            this.showNotification('success', 'Move Successful', `${ship.type} moved to ${newStartPos}`);
+            this.updateDisplay();
+            this.saveState();
+            return true;
+        } else {
+            console.log('Cannot move boat here');
+            this.showNotification('error', 'Move Impossible', 'Invalid position or overlap detected');
+            return false;
+        }
+    }
+
+    rotateShip(ship, teamId) {
+        if (!this.placementMode) return false;
+        
+        const grid = this.grids[teamId];
+        const newOrientation = ship.orientation === 'H' ? 'V' : 'H';
+        
+        console.log(`Tentative de rotation du ${ship.type} de ${ship.orientation} vers ${newOrientation}`);
+        
+        // Retirer temporairement le bateau de la grille pour vérifier les nouvelles positions
+        ship.positions.forEach(pos => {
+            grid.cells[pos].containsShip = false;
+        });
+        
+        // Calculer les nouvelles positions
+        const startPos = ship.positions[0];
+        const startX = startPos.charCodeAt(0) - 65;
+        const startY = parseInt(startPos.slice(1)) - 1;
+        
+        const newPositions = [];
+        for (let i = 0; i < ship.size; i++) {
+            const x = String.fromCharCode(65 + startX + (newOrientation === 'H' ? i : 0));
+            const y = startY + (newOrientation === 'V' ? i : 0) + 1;
+            newPositions.push(x + y);
+        }
+        
+        console.log('New positions calculated:', newPositions);
+        
+        // Vérifier si les nouvelles positions sont dans la grille
+        const validPositions = newPositions.every(pos => {
+            const x = pos.charCodeAt(0) - 65;
+            const y = parseInt(pos.slice(1)) - 1;
+            const isValid = x >= 0 && x < 5 && y >= 0 && y < 5;
+            console.log(`Position ${pos}: x=${x}, y=${y}, valide=${isValid}`);
+            return isValid;
+        });
+        
+        if (!validPositions) {
+            console.log('Nouvelles positions hors grille');
+            // Remettre le bateau à sa place
+            ship.positions.forEach(pos => {
+                grid.cells[pos].containsShip = true;
+            });
+            this.showNotification('error', 'Rotation Impossible', 'Boat would go out of grid if rotated here');
+            return false;
+        }
+        
+        // Vérifier qu'il n'y a pas de chevauchement
+        const noOverlap = newPositions.every(pos => !grid.cells[pos].containsShip);
+        console.log('Pas de chevauchement:', noOverlap);
+        
+        if (noOverlap) {
+            // Mettre à jour le bateau
+            ship.orientation = newOrientation;
+            ship.positions = newPositions;
+            newPositions.forEach(pos => {
+                grid.cells[pos].containsShip = true;
+            });
+            
+            console.log(`Boat ${ship.type} rotated to ${newOrientation}`);
+            this.showNotification('success', 'Rotation Successful', `${ship.type} rotated to ${newOrientation === 'H' ? 'horizontal' : 'vertical'}`);
+            this.updateDisplay();
+            this.saveState();
+            return true;
+        } else {
+            console.log('Overlap detected');
+            // Remettre le bateau à sa place
+            ship.positions.forEach(pos => {
+                grid.cells[pos].containsShip = true;
+            });
+            this.showNotification('error', 'Rotation Impossible', 'Boat cannot be rotated here (overlap or out of grid)');
+            return false;
+        }
+    }
+
+    isValidShipPlacement(ship, grid) {
+        // Vérifier que le bateau est dans la grille
+        const validPositions = ship.positions.every(pos => {
+            const x = pos.charCodeAt(0) - 65;
+            const y = parseInt(pos.slice(1)) - 1;
+            return x >= 0 && x < 5 && y >= 0 && y < 5;
+        });
+
+        if (!validPositions) return false;
+
+        // Vérifier qu'il n'y a pas de chevauchement
+        const noOverlap = ship.positions.every(pos => !grid.cells[pos].containsShip);
+        return noOverlap;
+    }
+
+    selectShipForAction(ship, teamId, coord) {
+        // Nettoyer les sélections précédentes
+        document.querySelectorAll('.ship-selected').forEach(el => {
+            el.classList.remove('ship-selected');
+        });
+        document.querySelectorAll('.ship-actions').forEach(el => {
+            el.remove();
+        });
+        
+        // Marquer le bateau comme sélectionné
+        const cell = document.querySelector(`#admin-grid-${teamId} .grid-cell[data-coord="${coord}"]`);
+        if (cell) {
+            cell.classList.add('ship-selected');
+            
+            // Créer les boutons d'action
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'ship-actions';
+            actionsDiv.innerHTML = `
+                <div class="ship-action-buttons">
+                       <button class="btn btn-small" onclick="game.moveShipPrompt('${ship.type}', '${teamId}', '${coord}')">
+                           📍 Move
+                       </button>
+                       <button class="btn btn-small" onclick="game.rotateShipFromAction('${ship.type}', '${teamId}')">
+                           🔄 Rotate
+                       </button>
+                </div>
+            `;
+            
+            // Positionner les boutons près du bateau
+            const gridContainer = document.querySelector(`#admin-grid-${teamId}`).parentElement;
+            gridContainer.appendChild(actionsDiv);
+            
+            // Positionner les boutons
+            const rect = cell.getBoundingClientRect();
+            const gridRect = gridContainer.getBoundingClientRect();
+            actionsDiv.style.position = 'absolute';
+            actionsDiv.style.left = (rect.left - gridRect.left + rect.width/2 - 50) + 'px';
+            actionsDiv.style.top = (rect.top - gridRect.top - 40) + 'px';
+            actionsDiv.style.zIndex = '1000';
+        }
+    }
+    
+    moveShipPrompt(shipType, teamId, currentCoord) {
+        const newPos = prompt(`Move ${shipType} to which position? (ex: A1, B2, etc.)`);
+        if (newPos && newPos.match(/^[A-E][1-5]$/)) {
+            const grid = this.grids[teamId];
+            const ship = grid.ships.find(s => s.positions.includes(currentCoord));
+            if (ship) {
+                this.moveShip(ship, teamId, newPos);
+            }
+        } else if (newPos) {
+            // Position invalide
+            this.showNotification('error', 'Invalid Position', 'Expected format: A1, B2, C3, D4, E5');
+        }
+        this.clearShipSelection();
+    }
+    
+    rotateShipFromAction(shipType, teamId) {
+        const grid = this.grids[teamId];
+        const ship = grid.ships.find(s => s.type === shipType);
+        if (ship) {
+            this.rotateShip(ship, teamId);
+        }
+        this.clearShipSelection();
+    }
+    
+    clearShipSelection() {
+        document.querySelectorAll('.ship-selected').forEach(el => {
+            el.classList.remove('ship-selected');
+        });
+        document.querySelectorAll('.ship-actions').forEach(el => {
+            el.remove();
+        });
+    }
+
+    // Système de notifications
+    showNotification(type, title, message, duration = 4000) {
+        const container = document.getElementById('notification-container');
+        if (!container) return;
+
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const icon = this.getNotificationIcon(type);
+        
+        notification.innerHTML = `
+            <div class="notification-header">
+                <span class="notification-icon">${icon}</span>
+                <span class="notification-title">${title}</span>
+            </div>
+            <div class="notification-message">${message}</div>
+            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+        `;
+
+        container.appendChild(notification);
+
+        // Animation d'apparition
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+
+        // Auto-suppression
+        if (duration > 0) {
+            setTimeout(() => {
+                this.hideNotification(notification);
+            }, duration);
+        }
+    }
+
+    hideNotification(notification) {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 300);
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            success: '✅',
+            warning: '⚠️',
+            error: '❌',
+            info: 'ℹ️'
+        };
+        return icons[type] || icons.info;
+    }
+
+    updatePlacementInstructions() {
+        const instructions = document.querySelector('.placement-instructions');
+        if (!instructions) return;
+        
+        instructions.innerHTML = `
+            <p><strong>Instructions :</strong></p>
+            <p>1. Les bateaux sont placés aléatoirement</p>
+            <p>2. <strong>Clic</strong> sur un bateau pour voir les actions</p>
+            <p>3. Utilisez les boutons "Déplacer" et "Pivoter"</p>
+            <p>4. Cliquez sur "Valider" quand terminé</p>
+        `;
+    }
+
+    clearTeamGrid(teamId) {
+        this.grids[teamId] = new Grid(teamId);
+        this.updateDisplay();
+        this.saveState();
+        console.log(`Grid for team ${teamId} cleared`);
+    }
+
+    validateAllPlacements() {
+        const allTeamsPlaced = Object.keys(this.grids).every(teamId => {
+            const grid = this.grids[teamId];
+            return grid.ships.length === 2; // Porte-avion + Corvette
+        });
+        
+        if (allTeamsPlaced) {
+            console.log('All boats are placed!');
+            this.exitPlacementMode();
+            return true;
+        } else {
+            const missingTeams = Object.keys(this.grids).filter(teamId => {
+                const grid = this.grids[teamId];
+                return grid.ships.length < 2;
+            });
+            console.log('Missing teams:', missingTeams);
+            alert(`There are not enough boats for the teams: ${missingTeams.join(', ')}`);
+            return false;
+        }
     }
 }
 
@@ -997,7 +1278,7 @@ let game = new Game();
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM chargé, initialisation du jeu...');
+    console.log('DOM loaded, initializing game...');
     
     // Charger l'état sauvegardé
     game.loadState();
@@ -1024,18 +1305,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Synchronisation pour les onglets publics
     setInterval(() => {
         if (!window.location.pathname.includes('admin.html')) {
-            // C'est un onglet public, synchroniser le timer
-            const oldTimeLeft = game.timeLeft;
+            // C'est un onglet public, synchroniser l'affichage
             game.loadState();
-            
-            // Si le temps a changé, mettre à jour l'affichage
-            if (oldTimeLeft !== game.timeLeft) {
-                game.updateDisplay();
-            }
+            game.updateDisplay();
         }
-    }, 1000); // Toutes les secondes pour synchroniser le timer
+    }, 1000); // Toutes les secondes pour synchroniser l'affichage
     
-    console.log('Initialisation terminée !');
+    console.log('Initialization completed!');
 });
 
 function setupCrossTabSync() {
@@ -1071,7 +1347,7 @@ function setupCrossTabSync() {
     
     if (isAdminTab) {
         // C'est un onglet admin - on peut contrôler le jeu
-        console.log('Onglet administrateur détecté');
+        console.log('Admin tab detected');
         // Masquer la navigation si elle existe
         const nav = document.querySelector('.app-nav');
         if (nav) {
@@ -1084,7 +1360,7 @@ function setupCrossTabSync() {
         if (publicDisplay) publicDisplay.classList.add('hidden');
     } else {
         // C'est un onglet public - on affiche seulement
-        console.log('Onglet public détecté');
+        console.log('Public tab detected');
         // Masquer la navigation pour l'onglet public
         const nav = document.querySelector('.app-nav');
         if (nav) {
@@ -1139,7 +1415,7 @@ function setupNavigation() {
             // Sortir du mode plein écran
             if (document.exitFullscreen) {
                 document.exitFullscreen().catch(err => {
-                    console.log('Erreur lors de la sortie du mode plein écran:', err);
+                    console.log('Error exiting fullscreen mode:', err);
                 });
             } else if (document.webkitExitFullscreen) {
                 document.webkitExitFullscreen();
@@ -1153,7 +1429,7 @@ function setupNavigation() {
             const element = document.documentElement;
             if (element.requestFullscreen) {
                 element.requestFullscreen().catch(err => {
-                    console.log('Erreur lors de l\'entrée en mode plein écran:', err);
+                    console.log('Error entering fullscreen mode:', err);
                 });
             } else if (element.webkitRequestFullscreen) {
                 element.webkitRequestFullscreen();
@@ -1183,10 +1459,10 @@ function setupNavigation() {
         
         if (isFullscreen) {
             document.body.classList.add('fullscreen-mode');
-            console.log('Mode plein écran activé');
+            console.log('Fullscreen mode activated');
         } else {
             document.body.classList.remove('fullscreen-mode');
-            console.log('Mode plein écran désactivé');
+            console.log('Fullscreen mode deactivated');
         }
         
         // Mettre à jour le texte du bouton
@@ -1200,32 +1476,18 @@ function setupNavigation() {
 function setupAdminEvents() {
     // Boutons de contrôle du jeu (seulement si les éléments existent)
     const startGameBtn = document.getElementById('start-game');
-    const pauseGameBtn = document.getElementById('pause-game');
     const endGameBtn = document.getElementById('end-game');
     const resetGameBtn = document.getElementById('reset-game');
     
     if (startGameBtn) {
         startGameBtn.addEventListener('click', () => {
-            console.log('Bouton Démarrer cliqué !');
+            console.log('Start button clicked!');
             game.startGame();
         });
     } else {
-        console.log('Bouton start-game non trouvé !');
+        console.log('Start button not found!');
     }
     
-    if (pauseGameBtn) {
-        pauseGameBtn.addEventListener('click', () => {
-            if (game.settings.isPaused) {
-                // Timer en pause, le reprendre
-                game.resumeGame();
-                console.log('Timer repris via bouton');
-            } else {
-                // Timer en cours, le mettre en pause
-                game.pauseGame();
-                console.log('Timer mis en pause via bouton');
-            }
-        });
-    }
     
     if (endGameBtn) {
         endGameBtn.addEventListener('click', () => {
@@ -1241,7 +1503,7 @@ function setupAdminEvents() {
         });
     }
     
-    // Sélection d'équipe
+    // Sélection d'team
     document.querySelectorAll('.team-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             game.setCurrentTeam(btn.dataset.team);
@@ -1306,13 +1568,6 @@ function setupAdminEvents() {
     }
     
     // Paramètres
-    const showTimerCheckbox = document.getElementById('show-timer');
-    if (showTimerCheckbox) {
-        showTimerCheckbox.addEventListener('change', (e) => {
-            game.settings.showTimer = e.target.checked;
-            game.updateDisplay();
-        });
-    }
     
     const muteSoundsCheckbox = document.getElementById('mute-sounds');
     if (muteSoundsCheckbox) {
@@ -1335,9 +1590,41 @@ function setupAdminEvents() {
             game.resetGame();
         });
     }
+    
+    // Événements pour le placement manuel
+    const manualPlacementBtn = document.getElementById('manual-placement');
+    if (manualPlacementBtn) {
+        manualPlacementBtn.addEventListener('click', () => {
+            game.startPlacementMode();
+        });
+    }
+    
+    const clearPlacementBtn = document.getElementById('clear-placement');
+    if (clearPlacementBtn) {
+        clearPlacementBtn.addEventListener('click', () => {
+            const teamId = document.getElementById('placement-team').value;
+            if (confirm(`Clear all boats for team ${teamId.toUpperCase()} ?`)) {
+                game.clearTeamGrid(teamId);
+            }
+        });
+    }
+    
+    const validatePlacementBtn = document.getElementById('validate-placement');
+    if (validatePlacementBtn) {
+        validatePlacementBtn.addEventListener('click', () => {
+            game.validateAllPlacements();
+        });
+    }
+    
+    const cancelPlacementBtn = document.getElementById('cancel-placement');
+    if (cancelPlacementBtn) {
+        cancelPlacementBtn.addEventListener('click', () => {
+            game.exitPlacementMode();
+        });
+    }
 }
 
-// Gestion des raccourcis clavier pour les équipes
+// Gestion des raccourcis clavier pour les teams
 document.addEventListener('keydown', (e) => {
     // Raccourci F11 pour le mode plein écran
     if (e.key === 'F11') {
@@ -1349,7 +1636,7 @@ document.addEventListener('keydown', (e) => {
         return;
     }
     
-    // Raccourcis pour les équipes (seulement en mode jeu)
+    // Raccourcis pour les teams (seulement en mode jeu)
     if (game.gameState === 'playing') {
         const teamKeys = { '1': 'a', '2': 'b', '3': 'c', '4': 'd' };
         if (teamKeys[e.key]) {
